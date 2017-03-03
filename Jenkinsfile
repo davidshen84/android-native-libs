@@ -2,6 +2,7 @@ pipeline {
   agent any
   environment {
     ANDROID_NDK = '/var/android-ndk'
+    MAKE_OPTS = '-j3'
     OPENSSL_ARCHIVE_NAME ='openssl-1.1.0c'
     CURL_ARCHIVE_NAME = 'curl-7.51.0'
     PROTOBUF_ARCHIVE_NAME ='protobuf-3.1.0'
@@ -70,7 +71,7 @@ pipeline {
                         tool: 'mips64el-linux-android']
           }
 
-          for(c in configs) {
+          for (c in configs) {
             def toolchain_dir = "${env['JENKINS_HOME']}/android-${ANDROID_API}-${c['abi']}-toolchain"
             def tool_prefix = "${toolchain_dir}/bin/${c['tool']}"
 
@@ -97,8 +98,13 @@ pipeline {
                         --api=${ANDROID_API} \
                         --stl=libc++ \
                         --install-dir=${TOOLCHAIN_DIR}'
-              sh '([ -d build ] && rm -rf build) || mkdir build'
-              // config && build
+
+              if(fileExists('build')) {
+                sh 'rm -rf build'
+              }
+              sh 'mkdir build'
+
+              // config && make
               dir('build') {
                 sh '../${OPENSSL_ARCHIVE_NAME}/Configure ${ARCH} \
                         --prefix=/opt/output/${OPENSSL_ARCHIVE_NAME}-android-${ANDROID_API}-${ABI} \
@@ -107,7 +113,7 @@ pipeline {
                         --with-zlib-lib=${SYSROOT}/usr/lib \
                         zlib \
                         no-asm no-shared no-unit-test'
-                sh 'make -j5 && make install'
+                sh 'make ${MAKE_OPTS} && make install'
               }
             }
           }
@@ -218,8 +224,8 @@ pipeline {
               if (fileExists('build')) {
                 sh 'rm -rf build'
               }
-
               sh 'mkdir build'
+
               // config && make
               dir('build') {
                 sh '../${CURL_ARCHIVE_NAME}/configure \
@@ -227,20 +233,15 @@ pipeline {
                       --with-sysroot=${SYSROOT}                         \
                       --host=${TOOL}                                    \
                       --with-ssl=${OPENSSL_ROOT}                        \
-                      --enable-ipv6                                     \
-                      --enable-static                                   \
+                      --enable-ipv6 --enable-static                     \
                       --enable-threaded-resolver                        \
-                      --disable-dict                                    \
-                      --disable-gopher                                  \
-                      --disable-ldap --disable-ldaps                    \
-                      --disable-manual                                  \
-                      --disable-pop3 --disable-smtp --disable-imap      \
-                      --disable-rtsp                                    \
                       --disable-shared                                  \
-                      --disable-smb                                     \
-                      --disable-telnet                                  \
-                      --disable-verbose'
-                sh 'make -j5 && make install'
+                      --disable-dict --disable-gopher                   \
+                      --disable-ldap --disable-ldaps                    \
+                      --disable-pop3 --disable-smtp --disable-imap      \
+                      --disable-smb --disable-telnet --disable-rtsp     \
+                      --disable-manual --disable-verbose'
+                sh 'make ${MAKE_OPTS} && make install'
               }
             }
           }
@@ -337,11 +338,13 @@ pipeline {
                         --api=${ANDROID_API} \
                         --stl=libc++ \
                         --install-dir=${TOOLCHAIN_DIR}'
+
               if (fileExists('build')) {
                 sh 'rm -rf build'
               }
               sh 'mkdir build'
-              // config && build
+
+              // config && make
               dir('build') {
                 sh '../${PROTOBUF_ARCHIVE_NAME}/configure \
                     --prefix=/opt/output/${PROTOBUF_ARCHIVE_NAME}-android-${ANDROID_API}-${ABI} \
@@ -350,9 +353,9 @@ pipeline {
                     --with-zlib                                         \
                     --host=${TOOL}                                      \
                     --enable-static                                     \
-                    --disable-shared                                    \
-                    --enable-cross-compile'
-                sh 'make -j5 && make install'
+                    --enable-cross-compile                              \
+                    --disable-shared'
+                sh 'make ${MAKE_OPTS} && make install'
               }
             }
           }
