@@ -2,15 +2,18 @@ pipeline {
   agent any
   environment {
     ANDROID_NDK = '/var/android-ndk'
-    PROTOBUF_ARCHIVE_VERSION = '3.1.0'
-    PROTOBUF_ARCHIVE_NAME ='protobuf-${PROTOBUF_ARCHIVE_VERSION}'
+    PROTOBUF_ARCHIVE_NAME ='protobuf-3.1.0'
   }
   stages {
     stage('Download & unpack protobuf source') {
       steps {
         script {
-          if (!fileExists("${env['PROTOBUF_ARCHIVE_NAME']}-env['PROTOBUF_ARCHIVE_VERSION']")) {
-            sh 'curl https://codeload.github.com/google/${PROTOBUF_ARCHIVE_NAME%%-*}/tar.gz/v${PROTOBUF_ARCHIVE_VERSION} | tar xz'
+          if (!fileExists("${env['PROTOBUF_ARCHIVE_NAME']}")) {
+            sh 'curl https://codeload.github.com/google/${PROTOBUF_ARCHIVE_NAME%%-*}/tar.gz/v${PROTOBUF_ARCHIVE_NAME#*-} | tar xz'
+
+            dir("${PROTOBUF_ARCHIVE_NAME}") {
+              sh './autogen.sh'
+            }
           }
         }
       }
@@ -61,8 +64,6 @@ pipeline {
                         tool: 'mips64el-linux-android']
           }
 
-          def protobuf_archive_name = "${env['PROTOBUF_ARCHIVE_NAME']}"
-          echo "${protobuf_archive_name}"
           for(c in configs) {
             def toolchain_dir = "${env['JENKINS_HOME']}/android-${ANDROID_API}-${c['abi']}-toolchain"
             def tool_prefix = "${toolchain_dir}/bin/${c['tool']}"
@@ -70,23 +71,23 @@ pipeline {
             withEnv(["ARCH=${c['arch']}",
                      "ABI=${c['abi']}",
                      "ANDROID_API=${ANDROID_API}",
-                     "ARCH_CFLAGS=${c['cflags']}",
-                     "ARCH_LDFLAGS=${c['ldflags']}",
                      "LIBS=-lc++_static -latomic",
                      "NDK_ARCH=${c['ndkArch']}",
                      "TOOLCHAIN_DIR=${toolchain_dir}",
+                     "TOOL=${c['tool']}",
                      "SYSROOT=${toolchain_dir}/sysroot",
                      // tool path
-                     // "CC=${toolchain_dir}/bin/clang",
+                     "CC=${toolchain_dir}/bin/clang",
                      "CXX=${toolchain_dir}/bin/clang++",
                      "LD=${tool_prefix}-ld",
                      "AR=${tool_prefix}-ar",
                      "RANLIB=${tool_prefix}-ranlib",
                      "STRIP=${tool_prefix}-strip",
                      // flags
-                     // "CFLAGS=${c['cflags']} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64",
-                     "CXXFLAGS=${c['cflags']} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing",
-                     "LDFLAGS=${c['ldflags']} -static-libstdc++"]) {
+                     "CFLAGS=${c['cflags'] ?: ''} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing",
+                     "CXXFLAGS=${c['cflags'] ?: ''} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -std=c++11 -frtti -fexceptions",
+                     "LDFLAGS=${c['ldflags'] ?: ''}"]) {
+
               // create toolchain
               sh '[ -d ${TOOLCHAIN_DIR} ] || python ${ANDROID_NDK}/build/tools/make_standalone_toolchain.py \
                         --arch=${NDK_ARCH} \
@@ -99,8 +100,7 @@ pipeline {
               sh 'mkdir build'
               // config && build
               dir('build') {
-                sh '../${protobuf_archive_name}/autogen.sh'
-                sh '../${protobuf_archive_name}/configure \
+                sh '../${PROTOBUF_ARCHIVE_NAME}/configure \
                     --prefix=/opt/output/${PROTOBUF_ARCHIVE_NAME}-android-${ANDROID_API}-${ABI} \
                     --with-sysroot=${SYSROOT}                           \
                     --with-protoc=`which protoc`                        \
