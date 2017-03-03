@@ -24,7 +24,6 @@ pipeline {
             [arch: 'android',
              abi: 'armeabi',
              cflags: '-mthumb',
-             ldflags: '',
              ndkArch: 'arm',
              tool: 'arm-linux-androideabi'],
             [arch: 'android-armeabi',
@@ -36,13 +35,10 @@ pipeline {
             [arch: 'android-x86',
              abi: 'x86',
              cflags: '-march=i686 -mtune=intel -msse3 -mfpmath=sse -m32',
-             ldflags: '',
              ndkArch: 'x86',
              tool: 'i686-linux-android'],
             [arch: 'android-mips',
              abi: 'mips',
-             cflags: '',
-             ldflags: '',
              ndkArch: 'mips',
              tool: 'mipsel-linux-android']
             ]
@@ -51,22 +47,17 @@ pipeline {
           if ("${ANDROID_API}".toInteger() > 20) {
             configs << [arch: 'android64-aarch64',
                         abi: 'arm64-v8a',
-                        cflags: '',
-                        ldflags: '',
                         ndkArch: 'arm64',
                         tool: 'aarch64-linux-android']
 
             configs << [arch: 'android64',
                         abi: 'x86_64',
                         cflags: '-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel',
-                        ldflags: '',
                         ndkArch: 'x86_64',
                         tool: 'x86_64-linux-android']
 
             configs << [arch: 'linux64-mips64',
                         abi: 'mips',
-                        cflags: '',
-                        ldflags: '',
                         ndkArch: 'mips64',
                         tool: 'mips64el-linux-android']
           }
@@ -78,8 +69,6 @@ pipeline {
             withEnv(["ARCH=${c['arch']}",
                      "ABI=${c['abi']}",
                      "ANDROID_API=${ANDROID_API}",
-                     "ARCH_CFLAGS=${c['cflags']}",
-                     "ARCH_LDFLAGS=${c['ldflags']}",
                      "NDK_ARCH=${c['ndkArch']}",
                      "TOOLCHAIN_DIR=${toolchain_dir}",
                      "SYSROOT=${toolchain_dir}/sysroot",
@@ -90,8 +79,8 @@ pipeline {
                      "RANLIB=${tool_prefix}-ranlib",
                      "STRIP=${tool_prefix}-strip",
                      // flags
-                     "CFLAGS=${c['cflags']} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64",
-                     "LDFLAGS=${c['ldflags']}"]) {
+                     "CFLAGS=${c['cflags'] ?: ''} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64",
+                     "LDFLAGS=${c['ldflags'] ?: ''}"]) {
               // create toolchain
               sh '[ -d ${TOOLCHAIN_DIR} ] || python ${ANDROID_NDK}/build/tools/make_standalone_toolchain.py \
                         --arch=${NDK_ARCH} \
@@ -137,7 +126,6 @@ pipeline {
             [arch: 'android',
              abi: 'armeabi',
              cflags: '-mthumb',
-             ldflags: '',
              ndkArch: 'arm',
              tool: 'arm-linux-androideabi'],
             [arch: 'android-armeabi',
@@ -149,38 +137,29 @@ pipeline {
             [arch: 'android-x86',
              abi: 'x86',
              cflags: '-march=i686 -mtune=intel -msse3 -mfpmath=sse -m32',
-             ldflags: '',
              ndkArch: 'x86',
-             tool: 'i686-linux-android']
-            ]
+             tool: 'i686-linux-android'],
+            [arch: 'android-mips',
+             abi: 'mips',
+             ndkArch: 'mips',
+             tool: 'mipsel-linux-android']
+          ]
 
           // Only build 64bit arch if ANDROID_API is above level 20
           if ("${ANDROID_API}".toInteger() > 20) {
             configs << [arch: 'android64-aarch64',
                         abi: 'arm64-v8a',
-                        cflags: '',
-                        ldflags: '',
                         ndkArch: 'arm64',
                         tool: 'aarch64-linux-android']
 
             configs << [arch: 'android64',
                         abi: 'x86_64',
                         cflags: '-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel',
-                        ldflags: '',
                         ndkArch: 'x86_64',
                         tool: 'x86_64-linux-android']
 
-            configs << [arch: 'android-mips',
-                        abi: 'mips',
-                        cflags: '',
-                        ldflags: '',
-                        ndkArch: 'mips',
-                        tool: 'mipsel-linux-android']
-
             configs << [arch: 'linux64-mips64',
                         abi: 'mips',
-                        cflags: '',
-                        ldflags: '',
                         ndkArch: 'mips64',
                         tool: 'mips64el-linux-android']
           }
@@ -197,8 +176,6 @@ pipeline {
             withEnv(["ARCH=${c['arch']}",
                      "ABI=${c['abi']}",
                      "ANDROID_API=${ANDROID_API}",
-                     "ARCH_CFLAGS=${c['cflags']}",
-                     "ARCH_LDFLAGS=${c['ldflags']}",
                      "NDK_ARCH=${c['ndkArch']}",
                      "TOOL=${c['tool']}",
                      "TOOLCHAIN_DIR=${toolchain_dir}",
@@ -211,8 +188,8 @@ pipeline {
                      "RANLIB=${tool_prefix}-ranlib",
                      "STRIP=${tool_prefix}-strip",
                      // flags
-                     "CFLAGS=${c['cflags']} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64",
-                     "LDFLAGS=${c['ldflags']}"]) {
+                     "CFLAGS=${c['cflags'] ?: ''} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64",
+                     "LDFLAGS=${c['ldflags'] ?: ''}"]) {
 
               // create arm toolchain
               sh '[ -d ${TOOLCHAIN_DIR} ] || python ${ANDROID_NDK}/build/tools/make_standalone_toolchain.py \
@@ -281,8 +258,12 @@ pipeline {
              abi: 'x86',
              cflags: '-march=i686 -mtune=intel -msse3 -mfpmath=sse -m32',
              ndkArch: 'x86',
-             tool: 'i686-linux-android']
-            ]
+             tool: 'i686-linux-android'],
+            [arch: 'android-mips',
+             abi: 'mips',
+             ndkArch: 'mips',
+             tool: 'mipsel-linux-android']
+          ]
 
           // Only build 64bit arch if ANDROID_API is above level 20
           if ("${ANDROID_API}".toInteger() > 20) {
@@ -296,11 +277,6 @@ pipeline {
                         cflags: '-march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel',
                         ndkArch: 'x86_64',
                         tool: 'x86_64-linux-android']
-
-            configs << [arch: 'android-mips',
-                        abi: 'mips',
-                        ndkArch: 'mips',
-                        tool: 'mipsel-linux-android']
 
             configs << [arch: 'linux64-mips64',
                         abi: 'mips',
