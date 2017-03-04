@@ -1,4 +1,7 @@
 # README
 
-- openssl.groovy, pipeline to build OpenSSL
-- `-v  ${HOST_ANDROID_NDK}:/opt/android-ndk`
+- Jenkinsfile: Jenkins pipeline to build
+  - OpenSSL
+  - libcurl
+  - protobuf
+- Put **Android NDK** at `/var/android-ndk`
