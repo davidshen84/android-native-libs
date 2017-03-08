@@ -63,7 +63,7 @@ pipeline {
           }
 
           for (c in configs) {
-            def toolchain_dir = "${env['JENKINS_HOME']}/android-${ANDROID_API}-${c['abi']}-toolchain"
+            def toolchain_dir = "${env['WORKSPACE']}/android-${ANDROID_API}-${c['abi']}-toolchain"
             def tool_prefix = "${toolchain_dir}/bin/${c['tool']}"
 
             withEnv(["ARCH=${c['arch']}",
@@ -165,7 +165,7 @@ pipeline {
           }
 
           for(c in configs) {
-            def toolchain_dir = "${env['JENKINS_HOME']}/android-${ANDROID_API}-${c['abi']}-toolchain"
+            def toolchain_dir = "${env['WORKSPACE']}/android-${ANDROID_API}-${c['abi']}-toolchain"
             def tool_prefix = "${toolchain_dir}/bin/${c['tool']}"
             def openssl_root = "/opt/output/${env['OPENSSL_ARCHIVE_NAME']}-android-${ANDROID_API}-${c['abi']}"
 
@@ -285,7 +285,7 @@ pipeline {
           }
 
           for(c in configs) {
-            def toolchain_dir = "${env['JENKINS_HOME']}/android-${ANDROID_API}-${c['abi']}-toolchain"
+            def toolchain_dir = "${env['WORKSPACE']}/android-${ANDROID_API}-${c['abi']}-toolchain"
             def tool_prefix = "${toolchain_dir}/bin/${c['tool']}"
 
             withEnv(["ARCH=${c['arch']}",
