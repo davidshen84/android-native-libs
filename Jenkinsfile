@@ -17,6 +17,9 @@ pipeline {
       }
     }
     stage('Build OpenSSL') {
+      when {
+        expression { return params.BUILD_OPENSSL }
+      }
       steps {
         script {
           def configs = [
@@ -114,7 +117,10 @@ pipeline {
         sh 'curl https://curl.haxx.se/download/${CURL_ARCHIVE_NAME}.tar.gz | tar xz'
       }
     }
-    stage('Build curl') {
+    stage('Build libcurl') {
+      when {
+        expression { return params.BUILD_LIBCURL }
+      }
       steps {
         script {
           def configs = [
@@ -229,6 +235,9 @@ pipeline {
       }
     }
     stage('Build protobuf') {
+      when {
+        expression { return params.BUILD_PROTOBUF }
+      }
       steps {
         script {
           def configs = [
